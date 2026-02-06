@@ -40,7 +40,13 @@ static var _log_file: FileAccess
 static var _is_valid: bool
 static var _mutex: Mutex = Mutex.new()
 
+## Minimum log level to include in the log file.
+static var _min_log_level: Event = Event.INFO
+
 static func _static_init() -> void:
+	if not OS.is_debug_build():
+		_min_log_level = Event.WARN # If Release build only include WARN and up.
+
 	_log_file = _create_log_file()
 	_is_valid = _log_file and _log_file.is_open()
 	if _is_valid:
@@ -133,27 +139,30 @@ func _log_message(message: String, log_message_error: bool) -> void:
 
 # Send and info message to the log.
 static func info(message: String) -> void:
-	if not _is_valid:
-		return
 	var event := Event.INFO
+	if not _is_valid or event < _min_log_level:
+		return
+	
 	message = _format_log_message(message, event)
 	_add_message_to_file(message, event)
 	_print_event(message, event)
 
 ## Send a Warn message to the log.
 static func warn(message: String) -> void:
-	if not _is_valid:
-		return
 	var event := Event.WARN
+	if not _is_valid or event < _min_log_level:
+		return
+	
 	message = _format_log_message(message, event)
 	_add_message_to_file(message, event)
 	_print_event(message, event)
 
 ## Send an Error message to the log.
 static func error(message: String) -> void:
-	if not _is_valid:
-		return
 	var event := Event.ERROR
+	if not _is_valid or event < _min_log_level:
+		return
+	
 	message = _format_log_message(message, event)
 	var script_backtraces := Engine.capture_script_backtraces()
 	message += '\n' + _get_gdscript_backtrace(script_backtraces)
@@ -162,9 +171,10 @@ static func error(message: String) -> void:
 
 ## Send a Critical message to the log.
 static func critical(message: String) -> void:
-	if not _is_valid:
-		return
 	var event := Event.CRITICAL
+	if not _is_valid or event < _min_log_level:
+		return
+	
 	message = _format_log_message(message, event)
 	var script_backtraces := Engine.capture_script_backtraces()
 	message += '\n' + _get_gdscript_backtrace(script_backtraces)
