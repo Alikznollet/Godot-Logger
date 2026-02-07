@@ -14,6 +14,16 @@ enum Event {
 	FORCE_FLUSH
 }
 
+enum Channel {
+	GENERAL,
+	PHYSICS,
+	AUDIO,
+	RENDER,
+	NETWORK,
+	UI,
+	INPUT,
+}
+
 const _LOG_DIR: String = "user://logs/"
 const _LOG_EXTENSION: String = "log"
 
@@ -37,6 +47,7 @@ const EVENT_COLORS: Dictionary[Event, String] = {
 }
 
 static var _event_strings: PackedStringArray = Event.keys()
+static var _channel_strings: PackedStringArray = Channel.keys()
 
 static var _log_file: FileAccess
 static var _thread: Thread
@@ -48,6 +59,10 @@ static var _is_logger_active: bool = false
 
 ## Minimum log level to include in the log file.
 static var _min_log_level: Event = Event.DEBUG
+
+## The Channels that are currently being logged.
+## Allows for coarser logging when the issue is known to be in a certain sub-system.
+static var _active_channels: Array = Channel.values()
 
 static func _static_init() -> void:
 	if not OS.is_debug_build():
@@ -103,10 +118,11 @@ static func _get_gdscript_backtrace(script_backtraces: Array[ScriptBacktrace]) -
 	return "Backtrace N/A" if gdscript == -1 else str(script_backtraces[gdscript])
 
 ## Formats a Log message properly.
-static func _format_log_message(message: String, event: Event) -> String:
-	return "[{time}] [{event}] {message}".format({
+static func _format_log_message(message: String, event: Event, channel: Channel) -> String:
+	return "[{time}] [{event}] [{channel}] {message}".format({
 		"time": Time.get_time_string_from_system(),
 		"event": _event_strings[event],
+		"channel": _channel_strings[channel],
 		"message": message
 	})
 
@@ -134,15 +150,16 @@ func _log_message(message: String, log_message_error: bool) -> void:
 	if not _is_logger_active or message.begins_with("[lang=tlh]"):
 		return
 	var event := Event.ERROR if log_message_error else Event.INFO
-	message = _format_log_message(message.trim_suffix('\n'), event)
+	message = _format_log_message(message.trim_suffix('\n'), event, Channel.GENERAL)
 	_add_message_to_file_queue(message, event)
 
 # -- Custom Logging -- #
 
-static func _log(message: String, event: Event) -> void:
-	if not _is_logger_active or event < _min_log_level: return
+## Logs a specific message using it's event and channel values.
+static func _log(message: String, event: Event, channel: Channel) -> void:
+	if not _is_logger_active or event < _min_log_level or not channel in _active_channels: return
 
-	message = _format_log_message(message, event)
+	message = _format_log_message(message, event, Channel.GENERAL)
 
 	if event >= Event.ERROR:
 		var script_backtraces := Engine.capture_script_backtraces()
@@ -151,28 +168,47 @@ static func _log(message: String, event: Event) -> void:
 	_add_message_to_file_queue(message, event)
 	_print_event(message, event)
 
-static func debug(message: String) -> void:
-	_log(message, Event.DEBUG)
+# Send and DEBUG message to the log. Default Channel is GENERAL.
+static func debug(message: String, channel: Channel = Channel.GENERAL) -> void:
+	_log(message, Event.DEBUG, channel)
 
-# Send and info message to the log.
-static func info(message: String) -> void:
-	_log(message, Event.INFO)
+# Send and INFO message to the log. Default Channel is GENERAL.
+static func info(message: String, channel: Channel = Channel.GENERAL) -> void:
+	_log(message, Event.INFO, channel)
 
-## Send a Warn message to the log.
-static func warn(message: String) -> void:
-	_log(message, Event.WARN)
+## Send a Warn message to the log. Default Channel is GENERAL.
+static func warn(message: String, channel: Channel = Channel.GENERAL) -> void:
+	_log(message, Event.WARN, channel)
 
-## Send an Error message to the log.
-static func error(message: String) -> void:
-	_log(message, Event.ERROR)
+## Send an Error message to the log. Default Channel is GENERAL.
+static func error(message: String, channel: Channel = Channel.GENERAL) -> void:
+	_log(message, Event.ERROR, channel)
 
-## Send a Critical message to the log.
-static func critical(message: String) -> void:
-	_log(message, Event.CRITICAL)
+## Send a Critical message to the log. Default Channel is GENERAL.
+static func critical(message: String, channel: Channel = Channel.GENERAL) -> void:
+	_log(message, Event.CRITICAL, channel)
 
 ## Forcibly flush the log file.
 static func force_flush() -> void:
 	_add_message_to_file_queue("", Event.FORCE_FLUSH)
+
+# -- Channel Muting/Un-muting -- #
+
+## Mutes all channels (essentially stopping all logs)
+static func mute_all() -> void:
+	_active_channels.clear()
+
+## Un-mutes all channels (essentially opening all logs)
+static func unmute_all() -> void:
+	_active_channels = Channel.values()
+
+## Mutes a single channel, removing it's log output.
+static func mute_channel(channel: Channel) -> void:
+	_active_channels.erase(channel)
+
+## Unmute a single channel, re-enabling it's log output.
+static func unmute_channel(channel: Channel) -> void:
+	_active_channels.append(channel)
 
 # -- Printing & File -- #
 

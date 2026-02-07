@@ -8,12 +8,18 @@ func _notification(what: int) -> void:
 
 func _ready() -> void:
 	Log.info("Hello there!") # Logs an INFO message.
+	Log.warn("Unexpected introduction detected") # Logs a WARN message.
+	Log.error("Failed to provide adequate response") # Logs an ERROR message.
+	Log.critical("Crashing...") # Logs a CRITICAL message.
+	Log.force_flush() # Forcibly flushes the file.
 
 	# Logs DEBUG messages, these are the most frequent.
 	for i in range(5):
 		Log.debug("Debug %d" % i)
 
-	Log.warn("Unexpected introduction detected") # Logs a WARN message.
-	Log.error("Failed to provide adequate response") # Logs an ERROR message.
-	Log.critical("Crashing...") # Logs a CRITICAL message.
-	Log.force_flush() # Forcibly flushes the file.
+	# Can mute individual channels so logs don't show up for them.
+	Log.mute_channel(Log.Channel.AUDIO)
+	Log.error("Trying to log something for AUDIO", Log.Channel.AUDIO)
+	Log.unmute_channel(Log.Channel.AUDIO)
+	Log.error("This one it should actually log", Log.Channel.AUDIO)
+	Log.force_flush()
