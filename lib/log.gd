@@ -97,7 +97,9 @@ static func _create_log_file() -> FileAccess:
 	if not DirAccess.dir_exists_absolute(_LOG_DIR):
 		DirAccess.make_dir_recursive_absolute(_LOG_DIR)
 
-	var file_name := "%s.%s" % [Time.get_datetime_string_from_system().replace(":", "-"), _LOG_EXTENSION]
+	# Create a file_name based on time and process ID, so multiple DEBUG sessions can be started.
+	var pid = OS.get_process_id()
+	var file_name := "%s_%d.%s" % [Time.get_datetime_string_from_system().replace(":", "-"), pid, _LOG_EXTENSION]
 	var file_path := _LOG_DIR.path_join(file_name)
 	var file := FileAccess.open(file_path, FileAccess.WRITE)
 	return file
