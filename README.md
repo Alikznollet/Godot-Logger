@@ -1,14 +1,23 @@
 # Godot-Logger
 
-My personal logging solution in Godot. Makes use of the new Logger class and multi-threading in Godot v4.5+. The logger is a single script that can be found in ```/lib/log.gd```, with an example of how to log messages in ```/example/example.gd```. Things such as the minimum log level and the directory where the logs will be written to can be found at the top.
+My personal logging solution in Godot. Makes use of the new Logger class and multi-threading in Godot v4.5+. The logger is a single script that can be found in ```/lib/log.gd```, with an example of the features in ```/example/example.gd```. All *variables* that can be tinkered with should be at the top of the file.
 
 Writing the logs is done on a separate thread, ensuring the main thread can keep running the application.
 
 Feel free to use and modify this in any way, any suggestions are also always welcome.
 
-### Notes
+## Usage Notes
 
-- Make sure to **enable** ``` Project Settings > Debug > Settings > GDScript > Always Track Call Stacks ```, otherwise traces could break in release builds.
-- **Disable** the default Godot logging in ``` Project Settings > Debug > File Logging ```. This way logging doesn't happen twice.
-- Make sure to call ```Log.shutdown()``` somewhere in an **Autoload**.
+To use just **drag and drop** ``log.gd`` into your project and change following project settings:
+
+- ``` Project Settings > Debug > Settings > GDScript > Always Track Call Stacks ``` = **ENABLED**
+- ``` Project Settings > Debug > File Logging ``` = **DISABLED**
+
+The logger should then be available for use anywhere in the project.
+
+To make sure that the logger shuts down properly on program *exit* the ``_notification`` function as seen in ``example.gd`` should be implemented.
+
+It's generally best practice to crash the engine with ``OS.crash("")`` after logging a CRITICAL event, since this type of event usually means the application has corrupted state. 
+
+
 
