@@ -129,11 +129,18 @@ static func _get_gdscript_backtrace(script_backtraces: Array[ScriptBacktrace]) -
 ## Formats a Log message properly.
 static func _format_log_message(message: String, event: Event, channel: Channel) -> String:
 	return "[{time}] [{event}] [{channel}] {message}".format({
-		"time": Time.get_time_string_from_system(),
+		"time": _get_timestamp(),
 		"event": _event_strings[event],
 		"channel": _channel_strings[channel],
 		"message": message
 	})
+
+## Returns a formatted timestamp including the current milliseconds.
+static func _get_timestamp() -> String:
+	var dt = Time.get_datetime_dict_from_system()
+	var unix_time = Time.get_unix_time_from_system()
+	var ms = int((unix_time - int(unix_time)) * 1000)
+	return "%02d:%02d:%02d.%03d" % [dt.hour, dt.minute, dt.second, ms]
 
 # -- Engine Interception -- #
 
@@ -143,7 +150,7 @@ func _log_error(function: String, file: String, line: int, code: String, rationa
 		return
 	var event := Event.WARN if error_type == ERROR_TYPE_WARNING else Event.ERROR
 	var message := "[{time}] [{event}] [{channel}] {rationale}\n{code}\n{file}:{line} @ {function}()".format({
-		"time": Time.get_time_string_from_system(),
+		"time": _get_timestamp(),
 		"event": _event_strings[event],
 		"rationale": rationale,
 		"code": code,
@@ -246,12 +253,9 @@ static func _thread_worker() -> void:
 	while true:
 		_semaphore.wait()
 		
+		# Grab the lock and all needed variables.
 		_mutex.lock()
-		if _exit_thread and _message_queue.is_empty():
-			_mutex.unlock()
-			break # This is the exact exit condition (end of program and everything printed)
-		
-		# Grab a duplicate of the message queue and clear it.
+		var should_exit = _exit_thread
 		var local_queue = _message_queue.duplicate()
 		_message_queue.clear()
 		_mutex.unlock()
@@ -267,6 +271,10 @@ static func _thread_worker() -> void:
 				if entry.flush or buffer_size >= _MAX_BUFFER_SIZE:
 					_log_file.flush()
 					buffer_size = 0
+
+		# If the worker was told to exit at the end we break out of the loop.
+		if should_exit:
+			break
 
 # -- Shutdown -- #
 

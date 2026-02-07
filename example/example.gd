@@ -7,14 +7,14 @@ func _notification(what: int) -> void:
 		Log.shutdown() # Shuts down the logger.
 
 func _ready() -> void:
+	# Below are all the logging functions, they optionally take a channel argument.
+	Log.debug("Debug message") # Logs a DEBUG message.
 	Log.info("Hello there!") # Logs an INFO message.
 	Log.warn("Unexpected introduction detected") # Logs a WARN message.
 	Log.error("Failed to provide adequate response") # Logs an ERROR message.
+	Log.critical("Entered a State that is impossible, crashing...") # Logs a CRITICAL message.
+	# OS.crash("See Above") # Uncomment this line for a manual crash (FAIL-FAST)
 	Log.force_flush() # Forcibly flushes the file.
-
-	# Logs DEBUG messages, these are the most frequent.
-	for i in range(5):
-		Log.debug("Debug %d" % i)
 
 	# Can mute individual channels so logs don't show up for them.
 	Log.mute_channel(Log.AUDIO)
@@ -23,14 +23,21 @@ func _ready() -> void:
 	Log.error("This one it should actually log", Log.AUDIO)
 	Log.force_flush()
 
-	# When logging a CRITICAL message usually best practice would be to crash the engine.
-	# We'd rather fail fast than continue with corrupted state.
-	Log.critical("Entered a State that is impossible, crashing...") # Logs a CRITICAL message.
-	# OS.crash("See Above") # Uncomment this line for a manual crash (FAIL-FAST)
+	# Or mute all channels
+	Log.mute_all()
+	Log.info("This should not be logged")
+	Log.info("This neither", Log.RENDER)
+	Log.unmute_all()
+	Log.info("Now this should show up again.")
+	Log.info("And also this...", Log.RENDER)
 
+	# When the engine crashes all logs that haven't been flushed yet are flushed.
 	Log.info("Now this should be logged too when the engine crashes naturally.")
 	Log.debug("And this too.")
 	var crash_array: Array = []
+
+	# For the sake of seeing the printed values we'll wait a second here.
+	await get_tree().create_timer(0.5).timeout
 
 	@warning_ignore("unused_variable")
 	var foo = crash_array[0] # This should crash the engine.
