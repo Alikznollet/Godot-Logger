@@ -39,6 +39,10 @@ const _LOG_EXTENSION: String = "log"
 const _MAX_LOG_FILES: int = 5
 const _MAX_BUFFER_SIZE: int = 10
 
+## You can switch this to false to hide the PID from being printed in the console.
+## PID will not be logged to the file.
+const _SHOW_PID_IN_PRINT: bool = true
+
 ## Which events cause a flush to the log file.
 const _FLUSH_EVENTS: PackedByteArray = [
 	Event.ERROR,
@@ -49,8 +53,8 @@ const _FLUSH_EVENTS: PackedByteArray = [
 ## Colors associated with each event.
 const EVENT_COLORS: Dictionary[Event, String] = {
 	Event.DEBUG: "light_blue",
-	Event.INFO: "lime_green",
-	Event.WARN: "gold",
+	Event.INFO: "dark_sea_green",
+	Event.WARN: "golden_rod",
 	Event.ERROR: "tomato",
 	Event.CRITICAL: "crimson"
 }
@@ -58,6 +62,7 @@ const EVENT_COLORS: Dictionary[Event, String] = {
 static var _event_strings: PackedStringArray = Event.keys()
 static var _channel_strings: PackedStringArray = Channel.keys()
 
+static var _pid: int
 static var _log_file: FileAccess
 static var _thread: Thread
 static var _semaphore: Semaphore
@@ -77,6 +82,7 @@ static func _static_init() -> void:
 	if not OS.is_debug_build():
 		_min_log_level = Event.INFO # If Release build only include INFO and up.
 
+	_pid = OS.get_process_id()
 	_log_file = _create_log_file()
 	var is_valid: bool = _log_file and _log_file.is_open()
 	if is_valid:
@@ -98,8 +104,7 @@ static func _create_log_file() -> FileAccess:
 		DirAccess.make_dir_recursive_absolute(_LOG_DIR)
 
 	# Create a file_name based on time and process ID, so multiple DEBUG sessions can be started.
-	var pid = OS.get_process_id()
-	var file_name := "%s_%d.%s" % [Time.get_datetime_string_from_system().replace(":", "-"), pid, _LOG_EXTENSION]
+	var file_name := "%s_%d.%s" % [Time.get_datetime_string_from_system().replace(":", "-"), _pid, _LOG_EXTENSION]
 	var file_path := _LOG_DIR.path_join(file_name)
 	var file := FileAccess.open(file_path, FileAccess.WRITE)
 	return file
@@ -239,10 +244,12 @@ static func _add_message_to_file_queue(message: String, event: Event) -> void:
 
 	_semaphore.post() # Wake up the worker.
 
-## Prints a single message and event.
+## Prints a single message and event. Also adds the PID if required.
 static func _print_event(message: String, event: Event) -> void:
 	var message_lines := message.split("\n")
-	message_lines[0] = "[b][color=%s]%s[/color][/b]" % [EVENT_COLORS[event], message_lines[0]]
+
+	var pid_tag: String = "[%d] " % _pid if _SHOW_PID_IN_PRINT else ""
+	message_lines[0] = "[b][color=%s]%s%s[/color][/b]" % [EVENT_COLORS[event], pid_tag, message_lines[0]]
 	print_rich.call_deferred("[lang=tlh]%s[/lang]" % "\n".join(message_lines))
 
 ## -- Multi-Threading -- ##
