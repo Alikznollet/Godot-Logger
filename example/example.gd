@@ -8,6 +8,11 @@ func _notification(what: int) -> void:
 
 func _ready() -> void:
 	Log.info("Hello there!") # Logs an INFO message.
+
+	# Logs DEBUG messages, these are the most frequent.
+	for i in range(5):
+		Log.debug("Debug %d" % i)
+
 	Log.warn("Unexpected introduction detected") # Logs a WARN message.
 	Log.error("Failed to provide adequate response") # Logs an ERROR message.
 	Log.critical("Crashing...") # Logs a CRITICAL message.

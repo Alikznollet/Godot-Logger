@@ -6,6 +6,7 @@ class_name Log
 ## Added Things like minimum Log Level to include, Threaded logging, etc...
 
 enum Event {
+	DEBUG,
 	INFO,
 	WARN,
 	ERROR,
@@ -28,6 +29,7 @@ const _FLUSH_EVENTS: PackedByteArray = [
 
 ## Colors associated with each event.
 const EVENT_COLORS: Dictionary[Event, String] = {
+	Event.DEBUG: "light_blue",
 	Event.INFO: "lime_green",
 	Event.WARN: "gold",
 	Event.ERROR: "tomato",
@@ -45,11 +47,11 @@ static var _message_queue: Array[Dictionary] = []
 static var _is_logger_active: bool = false
 
 ## Minimum log level to include in the log file.
-static var _min_log_level: Event = Event.INFO
+static var _min_log_level: Event = Event.DEBUG
 
 static func _static_init() -> void:
 	if not OS.is_debug_build():
-		_min_log_level = Event.WARN # If Release build only include WARN and up.
+		_min_log_level = Event.INFO # If Release build only include INFO and up.
 
 	_log_file = _create_log_file()
 	var is_valid: bool = _log_file and _log_file.is_open()
@@ -149,6 +151,9 @@ static func _log(message: String, event: Event) -> void:
 	_add_message_to_file_queue(message, event)
 	_print_event(message, event)
 
+static func debug(message: String) -> void:
+	_log(message, Event.DEBUG)
+
 # Send and info message to the log.
 static func info(message: String) -> void:
 	_log(message, Event.INFO)
@@ -238,4 +243,3 @@ static func shutdown() -> void:
 	if _log_file:
 		_log_file.close()
 	_is_logger_active = false
-	
