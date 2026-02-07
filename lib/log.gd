@@ -24,6 +24,15 @@ enum Channel {
 	INPUT,
 }
 
+# Easier access to the Channel values from the outside.
+const GENERAL := Channel.GENERAL
+const PHYSICS := Channel.PHYSICS
+const AUDIO := Channel.AUDIO
+const RENDER := Channel.RENDER
+const NETWORK := Channel.NETWORK
+const UI := Channel.UI
+const INPUT := Channel.INPUT
+	
 const _LOG_DIR: String = "user://logs/"
 const _LOG_EXTENSION: String = "log"
 
@@ -133,7 +142,7 @@ func _log_error(function: String, file: String, line: int, code: String, rationa
 	if not _is_logger_active:
 		return
 	var event := Event.WARN if error_type == ERROR_TYPE_WARNING else Event.ERROR
-	var message := "[{time}] {event}: {rationale}\n{code}\n{file}:{line} @ {function}()".format({
+	var message := "[{time}] [{event}] [{channel}] {rationale}\n{code}\n{file}:{line} @ {function}()".format({
 		"time": Time.get_time_string_from_system(),
 		"event": _event_strings[event],
 		"rationale": rationale,
@@ -141,6 +150,7 @@ func _log_error(function: String, file: String, line: int, code: String, rationa
 		"file": file,
 		"line": line,
 		"function": function,
+		"channel": _channel_strings[Channel.GENERAL]
  	})
 	if event == Event.ERROR:
 		message += '\n' + _get_gdscript_backtrace(script_backtraces)
@@ -159,7 +169,7 @@ func _log_message(message: String, log_message_error: bool) -> void:
 static func _log(message: String, event: Event, channel: Channel) -> void:
 	if not _is_logger_active or event < _min_log_level or not channel in _active_channels: return
 
-	message = _format_log_message(message, event, Channel.GENERAL)
+	message = _format_log_message(message, event, channel)
 
 	if event >= Event.ERROR:
 		var script_backtraces := Engine.capture_script_backtraces()
