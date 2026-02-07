@@ -10,5 +10,5 @@ Feel free to use and modify this in any way, any suggestions are also always wel
 
 - Make sure to **enable** ``` Project Settings > Debug > Settings > GDScript > Always Track Call Stacks ```, otherwise traces could break in release builds.
 - **Disable** the default Godot logging in ``` Project Settings > Debug > File Logging ```. This way logging doesn't happen twice.
-- Make sure to call ```Log.shutdown()``` somewhere in an **Autoload**.w
+- Make sure to call ```Log.shutdown()``` somewhere in an **Autoload**.
 
